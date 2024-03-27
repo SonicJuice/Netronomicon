@@ -418,22 +418,3 @@ class AutoComplete:
                 if self._node_word_info_matches_condition(node, condition):
                     new_tokens.append(node.word)
         return new_tokens
-
-    def update_count_of_word(self, word, count=None, offset=None): 
-        """ 
-        updates the count of a node in the DAWG 
-        RETURNS: integer 
-        """ 
-        matched_prefix_of_last_word, rest_of_word, node, matched_words_part, matched_condition_ever, \ 
-        matched_condition_in_branch = self._prefix_autofill_part(word=word) 
-        if node:
-            if offset:
-                with self._lock:
-                    node.count += offset
-            elif count:
-                with self._lock:
-                    node.count = count
-
-    def get_count_of_word(self, word):
-        return self.update_count_of_word(word)
-
