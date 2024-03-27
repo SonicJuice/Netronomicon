@@ -79,7 +79,6 @@ class AutoComplete:
                     for syn in syns: 
                         new_key = key.replace(syn_key, syn) 
                         new_words[new_key] = value 
-
         return new_words 
 
     def _populate_dawg(self): 
@@ -175,7 +174,15 @@ class AutoComplete:
         helper method checks if the stop word condition is met 
         RETURNS: bool 
         """ 
-        return (self._full_stop_words and matched_words and matched_words[-1] in self._full_stop_words and not matched_prefix_of_last_word) 
+        return (self._full_stop_words and matched_words and matched_words[-1] in self._full_stop_words and not matched_prefix_of_last_word)
+
+    @staticmethod
+    def _len_results(results):
+        return sum(map(len, results.values()))
+
+    @staticmethod
+    def _is_enough_results(results, size):
+        return AutoComplete._len_results(results) >= size
 
     def _find_words(self, word, max_cost, size, call_count=0): 
         """ 
@@ -245,7 +252,7 @@ class AutoComplete:
                     self._add_descendant_words_to_results(node=fuzzy_new_node, size=size, matched_words=matched_words, \ 
                     results=results, distance=fuzzy_min_distance) 
 
-            if matched_words and not sum(map(len, results.values())) >= size: 
+            if matched_words and not self._is_enough_results(results, size):
                 find_steps.append(FindStep.not_enough_results_add_some_descandants) 
                 total_min_distance = min(min_distance, fuzzy_min_distance) 
                 self._add_descendant_words_to_results(node=new_node, size=size, matched_words=matched_words, results=results, \ 
