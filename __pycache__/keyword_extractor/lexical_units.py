@@ -7,7 +7,6 @@ class Sentence:
         RETURNS: None 
         """ 
         self.words = words # list of tokens in the sentence 
-        self.stems = [] 
         self.length = len(words) # number of tokens in the sentence 
 
 
