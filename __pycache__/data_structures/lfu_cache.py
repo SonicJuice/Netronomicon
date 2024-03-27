@@ -1,3 +1,4 @@
+from threading import lock
 
 
 class CacheNode:
@@ -6,7 +7,6 @@ class CacheNode:
         initialises a CacheNode with a key and value
         RETURNS: None
         """
-
         self.key = key
         self.value = value
         self.freq_node = None
@@ -18,7 +18,6 @@ class CacheNode:
         removes the current CacheNode from its FreqNode's linked list
         RETURNS: None
         """
-
         if self.freq_node.cache_head == self.freq_node.cache_tail:
             self.freq_node.cache_head = self.freq_node.cache_tail = None
         elif self.freq_node.cache_head == self:
@@ -40,7 +39,6 @@ class FreqNode:
         initialises a doubly linked list
         RETURNS: None
         """
-
         self.freq = freq
         self.pre = None # previous FreqNode
         self.nxt = None # next FreqNode
@@ -65,7 +63,6 @@ class FreqNode:
         removes the current FreqNode from the linked list
         RETURNS: pointer
         """
-
         if self.pre:
             self.pre.nxt = self.nxt
         if self.nxt:
@@ -81,7 +78,6 @@ class FreqNode:
         removes and returns the CacheNode head of the linked list
         RETURNS: pointer
         """
-
         if not self.cache_head and not self.cache_tail:
             return None
         elif self.cache_head == self.cache_tail:
@@ -99,9 +95,7 @@ class FreqNode:
         appends cache node to linked list's tail
         RETURNS: None
         """
-
         cache_node.freq_node = self
-
         if not self.cache_head and not self.cache_tail:
             self.cache_head = self.cache_tail = cache_node
         else:
@@ -115,13 +109,10 @@ class FreqNode:
         inserts a FreqNode after the current one
         RETURNS: None
         """
-
         freq_node.pre = self
         freq_node.nxt = self.nxt
-
         if self.nxt:
             self.nxt.pre = freq_node
-
         self.nxt = freq_node
 
     def insert_before_current_freq_node(self, freq_node):
@@ -129,10 +120,8 @@ class FreqNode:
         inserts a FreqNode before the current one
         RETURNS: None
         """
-
         if self.pre:
             self.pre.nxt = freq_node
-
         freq_node.pre = self.pre
         freq_node.nxt = self
         self.pre = freq_node
@@ -144,54 +133,51 @@ class LFUCache:
         initialises a least frequently used (LFU) cache with a given capacity and the head of the frequency linked list
         RETURNS: None
         """
-
         self.cache = {}
         self.capacity = capacity
         self.freq_link_head = None
+        self.lock = Lock()
 
     def get_value(self, key):
         """
         retrieves the value associated with a given key from the cache, updating the frequency of the CacheNode and linked list
         RETURNS: string/integer
         """
-
-        if key in self.cache:
-            cache_node = self.cache[key]
-            freq_node = cache_node.freq_node
-            value = cache_node.value
-
-            self.move_forward(cache_node, freq_node)
-
-            return value
-        else:
-            return -1
+        with self.lock:
+            if key in self.cache:
+                cache_node = self.cache[key]
+                freq_node = cache_node.freq_node
+                value = cache_node.value
+                self.move_forward(cache_node, freq_node)
+                return value
+            else:
+                return -1
 
     def set_value(self, key, value):
         """
         sets the value associated with the given key in the cache
         RETURNS: None
         """
-
-        if self.capacity <= 0:
-            return -1
-
-        if key not in self.cache:
-            if len(self.cache) >= self.capacity:
-                self.dump_cache()
-                self.create_cache_node(key, value)
-        else:
-            cache_node = self.cache[key]
-            freq_node = cache_node.freq_node
-            cache_node.value = value
-
-            self.move_forward(cache_node, freq_node)
+        with self.lock:
+            if self.capacity <= 0:
+                return -1
+    
+            if key not in self.cache:
+                if len(self.cache) >= self.capacity:
+                    self.dump_cache()
+                    self.create_cache_node(key, value)
+            else:
+                cache_node = self.cache[key]
+                freq_node = cache_node.freq_node
+                cache_node.value = value
+    
+                self.move_forward(cache_node, freq_node)
 
     def move_forward(self, cache_node, freq_node):
         """
         moves a candidate node to the next FreqNode in the linked list
         RETURNS: None
         """
-
         if not freq_node.nxt or freq_node.nxt.freq != freq_node.freq + 1:
             target_freq_node = FreqNode(freq_node.freq + 1)
             target_empty = True
@@ -230,7 +216,6 @@ class LFUCache:
         creates a new CacheNode and add it to the cache
         RETURNS: None
         """
-
         cache_node = CacheNode(key, value)
         self.cache[key] = cache_node
 
