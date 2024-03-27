@@ -59,7 +59,7 @@ class OrderedSet(collections.abc.MutableSet):
 
       def __iter__(self):
           """
-          traverse the doubly linked list in insertion order starting from the beginning and yields each element.
+          traverse the doubly linked list in insertion order and yield each element.
           RETURNS: None
           """
           end = self.end
