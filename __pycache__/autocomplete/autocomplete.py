@@ -433,3 +433,7 @@ class AutoComplete:
             elif count:
                 with self._lock:
                     node.count = count
+
+    def get_count_of_word(self, word):
+        return self.update_count_of_word(word)
+
