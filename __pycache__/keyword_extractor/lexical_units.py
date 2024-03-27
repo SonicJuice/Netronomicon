@@ -3,7 +3,7 @@
 class Sentence: 
     def __init__(self, words): 
         """ 
-        initialises Sentence class attributes 
+        initialises Sentence attributes 
         RETURNS: None 
         """ 
         self.words = words # list of tokens in the sentence
