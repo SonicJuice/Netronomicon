@@ -166,7 +166,7 @@ class YAKE(PreProcessText):
                             prod_ *= self.features[token]['weight'] 
                             sum_ += self.features[token]['weight'] 
 
-                    """ sets sum_ to -1+eps so 1+sum_ != 0 if the candidate is a one token stopword at the 
+                    """ set sum_ to -1+eps so 1+sum_ != 0 if the candidate is a one token stopword at the 
                     start or the end of the sentence 
                     """
                     if sum_ == -1:  
@@ -187,3 +187,23 @@ class YAKE(PreProcessText):
             if (1.0 - dist) > threshold: 
                 return True 
             return False
+
+    def get_n_best(self, n=10, redundancy_removal=True, threshold=0.8):
+        """ 
+        yield the n-most relevant candidates
+        RETURNS: list
+        """
+    best = sorted(self.weights, key=self.weights.get, reverse=False)
+
+    if redundancy_removal:
+        non_redundant_best = []
+        for candidate in best:
+            if self.is_redundant(candidate, non_redundant_best, threshold=threshold):
+                continue
+            non_redundant_best.append(candidate)
+            if len(non_redundant_best) >= n:
+                break
+
+        best = non_redundant_best
+    n_best = [(u, self.weights[u]) for u in best[:min(n, len(best))]]
+    return n_best
