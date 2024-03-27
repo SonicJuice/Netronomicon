@@ -14,7 +14,6 @@ class PreProcessText(object):
         self.stoplist = set(stopwords.words('english')) 
 
     def _read(self, text): 
-
         """ 
         pre-processes text 
         RETURNS: list 
