@@ -5,7 +5,7 @@ from string import punctuation
 class LoadText(object): 
     def __init__(self): 
         """ 
-        initialises PreProcessText class attributes 
+        initialises LoadText attributes 
         RETURNS: None 
         """ 
         self.sentences = [] # list of Sentence objects 
