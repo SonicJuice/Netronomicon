@@ -1,5 +1,5 @@
 import re 
-from collections import deafaultdict 
+from collections import defaultdict 
 from statistics import stdev, mean 
 from math import log 
 
