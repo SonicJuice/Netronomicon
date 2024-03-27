@@ -193,17 +193,17 @@ class YAKE(PreProcessText):
         yield the n-most relevant candidates
         RETURNS: list
         """
-    best = sorted(self.weights, key=self.weights.get, reverse=False)
-
-    if redundancy_removal:
-        non_redundant_best = []
-        for candidate in best:
-            if self.is_redundant(candidate, non_redundant_best, threshold=threshold):
-                continue
-            non_redundant_best.append(candidate)
-            if len(non_redundant_best) >= n:
-                break
-
-        best = non_redundant_best
-    n_best = [(u, self.weights[u]) for u in best[:min(n, len(best))]]
-    return n_best
+        best = sorted(self.weights, key=self.weights.get, reverse=False)
+    
+        if redundancy_removal:
+            non_redundant_best = []
+            for candidate in best:
+                if self.is_redundant(candidate, non_redundant_best, threshold=threshold):
+                    continue
+                non_redundant_best.append(candidate)
+                if len(non_redundant_best) >= n:
+                    break
+    
+            best = non_redundant_best
+        n_best = [(u, self.weights[u]) for u in best[:min(n, len(best))]]
+        return n_best
