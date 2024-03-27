@@ -2,7 +2,7 @@ from collections import defaultdict
 from string import punctuation
 
 
-class PreProcessText(object): 
+class LoadText(object): 
     def __init__(self): 
         """ 
         initialises PreProcessText class attributes 
@@ -69,8 +69,6 @@ class PreProcessText(object):
         for punct in valid_punctuation.split(): 
             word = word.replace(punct, '') 
         return word.isalnum() 
-
- 
 
     def candidate_filtering(self, minimum_length=2, minimum_word_size=2, valid_punctuation='-', maximum_word_number=5, only_alphanum=True): 
         """filters the candidates containing strings from the stoplist. Only 
