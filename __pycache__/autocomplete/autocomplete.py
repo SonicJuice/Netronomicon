@@ -262,228 +262,167 @@ class AutoComplete:
         matched_words = [] 
         matched_words_set = set()  
 
-    def _add_words(words): 
+        def _add_words(words): 
+            """ 
+            helper method adds words to undergo prefix autofill 
+            RETURNS: bool 
+            """ 
+            is_added = False 
+            for word in words: 
+                if word not in matched_words_set: 
+                    matched_words.append(word) 
+                    matched_words_set.add(word) 
+                    is_added = True 
+            return is_added 
+
+        matched_prefix_of_last_word, rest_of_word, node, matched_words_part, matched_condition_ever, matched_condition_in_branch = \ 
+        self._prefix_autofill_part(word, node) 
+        _add_words(matched_words_part) 
+        result = (matched_prefix_of_last_word, rest_of_word, node, matched_words) 
+        len_rest_of_last_word = len(rest_of_word) 
+        
+        while len_rest_of_last_word and len_rest_of_last_word < len_prev_rest_of_last_word: 
+            word = matched_prefix_of_last_word + rest_of_word 
+            word = word.strip() 
+            len_prev_rest_of_last_word = len_rest_of_last_word 
+            matched_prefix_of_last_word, rest_of_word, node, matched_words_part, matched_condition_ever, \ 
+            matched_condition_in_branch = self._prefix_autofill_part(word, node=self._dawg, matched_condition_ever=matched_condition_ever, \ 
+            matched_condition_in_branch=matched_condition_in_branch) 
+            is_added = _add_words(matched_words_part) 
+
+            if is_added is False: 
+                break 
+            len_rest_of_last_word = len(rest_of_word) 
+            result = (matched_prefix_of_last_word, rest_of_word, node, matched_words) 
+
+        return result 
+
+    def prefix_autofill_part_condition(self, node): 
+        pass 
+
+    def _add_to_matched_words(self, node, matched_words, matched_condition_in_branch, matched_condition_ever, matched_prefix_of_last_word): 
         """ 
-        helper method adds words to undergo prefix autofill 
+        helper method verifies matched words 
+        RETURNS: tuple 
+        """ 
+        if matched_words: 
+            last_matched_word = matched_words[-1].replace(self.prefix_autofill_part_condition_suffix, '') 
+            if node.value.startswith(last_matched_word): 
+                matched_words.pop() 
+        value = node.value 
+
+        if self.prefix_autofill_part_condition_suffix: 
+            if self._node_word_info_matches_condition(node, self.prefix_autofill_part_condition): 
+                matched_condition_in_branch = True 
+                if matched_condition_ever and matched_prefix_of_last_word: 
+                    value = f"{matched_prefix_of_last_word}{self.prefix_autofill_part_condition_suffix}" 
+
+        matched_words.append(value) 
+        return matched_words, matched_condition_in_branch 
+
+    def _prefix_autofill_part(self, word, node=None, matched_condition_ever=False, matched_condition_in_branch=False): 
+        """ 
+        helper method builds a prefix by matching characters in the word with the nodes 
+        RETURNS: tuple 
+        """ 
+        node = node or self._dawg 
+        que = deque(word) 
+        matched_prefix_of_last_word = '' 
+        matched_words = [] 
+        nodes_that_words_were_extracted = set() 
+        
+        while que: 
+            char = que.popleft()  
+            if node.children: 
+                if char not in node.children: 
+                    space_child = node.children.get(' ') 
+                    if space_child and char in space_child.children: 
+                        node = space_child 
+                    else: 
+                        que.appendleft(char) 
+                        break 
+
+                node = node.children[char] 
+                if char != ' ' or matched_prefix_of_last_word: 
+                    matched_prefix_of_last_word += char 
+                if node.word: 
+                    if que: 
+                        next_char = que[0] 
+                        if next_char != ' ': 
+                            continue 
+                    matched_words, matched_condition_in_branch = self._add_to_matched_words(node, matched_words, matched_condition_in_branch, \
+                    matched_condition_ever, matched_prefix_of_last_word) 
+                    nodes_that_words_were_extracted.add(node) 
+                    matched_prefix_of_last_word = '' 
+            else:				 
+                if char == ' ' 
+                    node = self._dawg 
+                    if matched_condition_in_branch: 
+                        matched_condition_ever = True 
+                    else: 
+                        que.appendleft(char) 
+                        break 
+
+        if not que and node.word and node not in nodes_that_words_were_extracted: 
+            matched_words, matched_condition_in_branch = self._add_to_matched_words(node, matched_words, matched_condition_in_branch, \ 
+            matched_condition_ever, matched_prefix_of_last_word) 
+            matched_prefix_of_last_word = ''
+            
+        rest_of_word = "".join(que) 
+        if matched_condition_in_branch: 
+            matched_condition_ever = True
+        return matched_prefix_of_last_word, rest_of_word, node, matched_words, matched_condition_ever, matched_condition_in_branch 
+
+    def _add_descendant_words_to_results(self, node, size, matched_words, results, distance, should_traverse=True): 
+        """ 
+        helper method adds descendant words to results 
+        RETURNS: integer 
+        """ 
+        descendant_words = list(node.get_descendant_words(size, should_traverse, full_stop_words=self._full_stop_words)) 
+        extended = _extend_and_repeat(matched_words, descendant_words) 
+        if extended: 
+            results[distance].extend(extended) 
+        return distance 
+
+    def _node_word_info_matches_condition(self, node, condition): 
+        """ 
+        helper method checks if a node word satisfies a condition 
         RETURNS: bool 
         """ 
-        is_added = False 
-        for word in words: 
-            if word not in matched_words_set: 
-                matched_words.append(word) 
-
-matched_words_set.add(word) 
-
-is_added = True 
-
-return is_added 
-
- 
-
-matched_prefix_of_last_word, rest_of_word, node, matched_words_part, matched_condition_ever, matched_condition_in_branch = \ 
-self._prefix_autofill_part(word, node) 
-
-_add_words(matched_words_part) 
-
-result = (matched_prefix_of_last_word, rest_of_word, node, matched_words) 
-
-len_rest_of_last_word = len(rest_of_word) 
-
- 
-
-while len_rest_of_last_word and len_rest_of_last_word < len_prev_rest_of_last_word: 
-
- 
-
-word = matched_prefix_of_last_word + rest_of_word 
-
-word = word.strip() 
-
-len_prev_rest_of_last_word = len_rest_of_last_word 
-
-matched_prefix_of_last_word, rest_of_word, node, matched_words_part, matched_condition_ever, matched_condition_in_branch = self._prefix_autofill_part(word, node=self._dawg, matched_condition_ever=matched_condition_ever, matched_condition_in_branch=matched_condition_in_branch) 
-
-is_added = _add_words(matched_words_part) 
-
- 
-
-if is_added is False: 
-
-break 
-
-len_rest_of_last_word = len(rest_of_word) 
-
-result = (matched_prefix_of_last_word, rest_of_word, node, matched_words) 
-
-return result 
-
-def prefix_autofill_part_condition(self, node): 
-    pass 
-
-def _add_to_matched_words(self, node, matched_words, matched_condition_in_branch, matched_condition_ever, matched_prefix_of_last_word): 
-    """ 
-    helper method verifies matched words 
-    RETURNS: tuple 
-    """ 
-    if matched_words: 
-
-last_matched_word = matched_words[-1].replace(self.prefix_autofill_part_condition_suffix, '') 
-
-if node.value.startswith(last_matched_word): 
-
-matched_words.pop() 
-
-value = node.value 
-
-if self.prefix_autofill_part_condition_suffix: 
-
-if self._node_word_info_matches_condition(node, self.prefix_autofill_part_condition): 
-
-matched_condition_in_branch = True 
-
-if matched_condition_ever and matched_prefix_of_last_word: 
-
-value = f"{matched_prefix_of_last_word}{self.prefix_autofill_part_condition_suffix}" 
-
-matched_words.append(value) 
-
-return matched_words, matched_condition_in_branch 
-
-def _prefix_autofill_part(self, word, node=None, matched_condition_ever=False, matched_condition_in_branch=False): 
-    """ 
-    helper method builds a prefix by matching characters in the word with the nodes 
-    RETURNS: tuple 
-    """ 
-    node = node or self._dawg 
-    que = deque(word) 
-    matched_prefix_of_last_word = '' 
-    matched_words = [] 
-    nodes_that_words_were_extracted = set() 
-    
-    while que: 
-
-char = que.popleft()  
-
-if node.children: 
-
-if char not in node.children: 
-
-space_child = node.children.get(' ') 
-
-if space_child and char in space_child.children: 
-
-node = space_child 
-
-else: 
-
-que.appendleft(char) 
-
-break 
-
-node = node.children[char] 
-
-if char != ' ' or matched_prefix_of_last_word: 
-
-matched_prefix_of_last_word += char 
-
-if node.word: 
-
-if que: 
-
-next_char = que[0] 
-
-if next_char != ' ': 
-
-continue 
-
-matched_words, matched_condition_in_branch = self._add_to_matched_words(node, matched_words, matched_condition_in_branch, matched_condition_ever, matched_prefix_of_last_word) 
-
-nodes_that_words_were_extracted.add(node) 
-
-matched_prefix_of_last_word = '' 
-
-else:				 
-
-if char == ' ' 
-
-node = self._dawg 
-
-if matched_condition_in_branch: 
-
-matched_condition_ever = True 
-
-else: 
-
-que.appendleft(char) 
-
-break 
-
-if not que and node.word and node not in nodes_that_words_were_extracted: 
-
-matched_words, matched_condition_in_branch = self._add_to_matched_words(node, matched_words, matched_condition_in_branch, \ 
-matched_condition_ever, matched_prefix_of_last_word) 
-matched_prefix_of_last_word = '' 
-rest_of_word = "".join(que) 
-
-if matched_condition_in_branch: 
-    matched_condition_ever = True
-    
-return matched_prefix_of_last_word, rest_of_word, node, matched_words, matched_condition_ever, matched_condition_in_branch 
-
-def _add_descendant_words_to_results(self, node, size, matched_words, results, distance, should_traverse=True): 
-    """ 
-    helper method adds descendant words to results 
-    RETURNS: integer 
-    """ 
-    descendant_words = list(node.get_descendant_words(size, should_traverse, full_stop_words=self._full_stop_words)) 
-    extended = _extend_and_repeat(matched_words, descendant_words) 
-    if extended: 
-        results[distance].extend(extended) 
-
-    return distance 
-
-def _node_word_info_matches_condition(self, node, condition): 
-    """ 
-    helper method checks if a node word satisfies a condition 
-    RETURNS: bool 
-    """ 
-    _word = node.word 
-    word_info = self.words.get(_word) 
-    if word_info: 
-        return condition(word_info) 
-    else: 
-        return False 
-
-def get_all_descendant_words_for_condition(self, word, size, condition): 
-    """ 
-    returns all descendant words which satisfy a condition 
-    RETURNS: list 
-    """ 
-    new_tokens = [] 
-    matched_prefix_of_last_word, rest_of_word, node, matched_words_part, matched_condition_ever, \
-    matched_condition_in_branch = self._prefix_autofill_part(word=word) 
-
-if not rest_of_word and self._node_word_info_matches_condition(node, condition): 
-
-found_nodes_gen = node.get_descendant_nodes(size, insert_count=True) 
-
-for node in found_nodes_gen: 
-
-if self._node_word_info_matches_condition(node, condition): 
-
-new_tokens.append(node.word) 
-
-return new_tokens 
-
-def update_count_of_word(self, word, count=None, offset=None): 
-    """ 
-    updates the count of a node in the DAWG 
-    RETURNS: integer 
-    """ 
-    matched_prefix_of_last_word, rest_of_word, node, matched_words_part, matched_condition_ever, \ 
-    matched_condition_in_branch = self._prefix_autofill_part(word=word) 
-    if offset: 
-        node.count += offset 
-    elif count: 
-        node.count = count 
-    return node.count
+        _word = node.word 
+        word_info = self.words.get(_word) 
+        if word_info: 
+            return condition(word_info) 
+        else: 
+            return False 
+
+    def get_all_descendant_words_for_condition(self, word, size, condition): 
+        """ 
+        returns all descendant words which satisfy a condition 
+        RETURNS: list 
+        """ 
+        new_tokens = []
+
+        matched_prefix_of_last_word, rest_of_word, node, matched_words_part, matched_condition_ever, \ 
+        matched_condition_in_branch = self._prefix_autofill_part(word=word)
+        if not rest_of_word and self._node_word_info_matches_condition(node, condition):
+            found_nodes_gen = node.get_descendants_nodes(size, insert_count=True)
+            for node in found_nodes_gen:
+                if self._node_word_info_matches_condition(node, condition):
+                    new_tokens.append(node.word)
+        return new_tokens
+
+    def update_count_of_word(self, word, count=None, offset=None): 
+        """ 
+        updates the count of a node in the DAWG 
+        RETURNS: integer 
+        """ 
+        matched_prefix_of_last_word, rest_of_word, node, matched_words_part, matched_condition_ever, \ 
+        matched_condition_in_branch = self._prefix_autofill_part(word=word) 
+        if node:
+            if offset:
+                with self._lock:
+                    node.count += offset
+            elif count:
+                with self._lock:
+                    node.count = count
