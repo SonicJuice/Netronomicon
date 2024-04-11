@@ -1,33 +1,27 @@
-def partition(to_sort, low, high):  
-    """  
-    determines where pivot is in list  
-    RETURNS: int  
-    """  
+def _partition(to_sort, low, high):
+    """ initialise pivot as the last array element. """
+    pivot = to_sort[high]
+    """ track position where elements <= pivot should be placed. """
+    i = low - 1 
+    for j in range(low, high):
+        """ if j <= pivot, increment i and swap the elements at 
+        indices i and j. """
+        if to_sort[j] <= pivot:
+            i += 1
+            to_sort[i], to_sort[j] = to_sort[j], to_sort[i]
+    """ swap the pivot element with the element at index i + 1, 
+    ensuring that all elements <= pivot are to its left, and all elements > pivot 
+    are to its right. """
+    to_sort[i + 1], to_sort[high] = to_sort[high], to_sort[i + 1]
+    return i + 1
 
-    pivot = to_sort[high] #initial pivot  
-    i = low - 1 #pointer  
-
-    for j in range(low, high): #compare all elements with pivot 
-        if to_sort[j] <= pivot:  
-            i += 1  
-            (to_sort[i], to_sort[j]) = (to_sort[j], to_sort[i]) #swap elements  
-
-    (to_sort[i + 1], to_sort[high]) = (to_sort[high], to_sort[i + 1]) #then swap pivot element  
-
-    return i + 1 #end position  
-
- 
-
-def quick_sort(to_sort, low, high):  
-    """  
-    recursive quicksort  
-    RETURNS: list  
-    """
-
-    if low < high:  
-
-        pivot = partition(to_sort, low, high)  
-        quick_sort(to_sort, low, pivot - 1) #left recursive call  
-        quick_sort(to_sort, pivot + 1, high) #right recursive call  
-
+def quick_sort(to_sort, low, high):
+    """ when the lower bound index >= upper bound index, 
+    there are no more elements to sort. """
+    if low < high:
+        """ recursively sort the array by selecting a pivot via _partition, then sorting 
+        the subarrays to the left and right of the pivot. """
+        pivot = _partition(to_sort, low, high)
+        quick_sort(to_sort, low, pivot - 1)
+        quick_sort(to_sort, pivot + 1, high)
     return to_sort
